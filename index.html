@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Pytype Playground</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
+    <style>
+      textarea,
+      output {
+        display: block;
+      }
+      textarea {
+        width: 500px;
+        height: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Pytype Playground</h1>
+    <textarea id="input"></textarea>
+    <button id="check">Check</button>
+    <output id="errors"></output>
+    <script type="module">
+      async function main() {
+        input.value = ["def foo(x):", "  return x + 2", "", 'foo("1")'].join(
+          "\n"
+        );
+
+        const pyodide = await loadPyodide({
+          packages: [
+            "./wheels/attrs-23.2.0-py3-none-any.whl",
+            "./wheels/immutabledict-4.2.0-py3-none-any.whl",
+            "./wheels/pycnite-2024.7.9-py3-none-any.whl",
+            "./wheels/pytype-2024.4.11-cp311-cp311-emscripten_3_1_46_wasm32.whl",
+            "./wheels/tabulate-0.9.0-py3-none-any.whl",
+            "./wheels/typing_extensions-4.12.2-py3-none-any.whl",
+            "msgspec",
+          ],
+        });
+        window.pyodide = pyodide;
+        errors.innerText += "pyodide is downloaded\n";
+
+        const runCheck = await pyodide.runPythonAsync(`
+			from pytype import analyze
+			from pytype import config
+			from pytype import load_pytd
+
+			options = config.Options.create()
+			loader = load_pytd.create_loader(options)
+			
+			def check(code):
+				res = analyze.check_types(code, options, loader)
+				return str(res.context.errorlog)
+
+			check
+		`);
+
+        errors.innerText += "pytype is initialized\n";
+
+        check.onclick = () => {
+          const result = runCheck(input.value);
+          errors.innerText = result;
+        };
+      }
+      main();
+    </script>
+  </body>
+</html>
