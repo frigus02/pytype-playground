@@ -3,29 +3,39 @@
   <head>
     <title>Pytype Playground</title>
     <style>
+      html {
+        height: 100vh;
+      }
+
+      body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto 1fr;
+        margin: 0;
+        height: 100vh;
+      }
+
+      h1 {
+        grid-area: 1 / 1 / 2 / 3;
+      }
+
       textarea,
       output {
-        display: block;
         white-space: preserve;
         font-family: monospace;
       }
+
       textarea {
-        width: 500px;
-        height: 100px;
+        resize: none;
       }
     </style>
   </head>
   <body>
     <h1>Pytype Playground</h1>
     <textarea id="input"></textarea>
-    <button id="check">Check</button>
-    <output id="pytypeOutput"></output>
+    <output id="output"></output>
     <script type="module">
       const pytypeWorker = new Worker("./worker.js");
-
-      function now() {
-        return new Date().toLocaleString();
-      }
 
       let currentTask = undefined;
       let queuedTask = undefined;
@@ -56,29 +66,45 @@
       }
       pytypeWorker.onmessage = ({ data }) => {
         if ("notify" in data) {
-          pytypeOutput.innerText = `[${now()}] ${data.notify}\n`;
+          updateOutput(data.notify);
         } else if ("result" in data) {
           currentTask?.resolve(data.result);
         } else if ("error" in data) {
-          currentTask?.reject(data.error);
+          currentTask?.reject(new Error(data.error));
         } else {
-          pytypeOutput.innerText = `[${now()}] Unexpected message from worker.\n`;
+          updateOutput(
+            `Unexpected message from pytype worker. See browser console.`
+          );
           console.log(data);
         }
       };
 
-      input.value = ["def foo(x):", "  return x + 2", "", 'foo("1")'].join(
-        "\n"
-      );
+      function updateOutput(text) {
+        const now = new Date().toLocaleString();
+        output.innerText = `[${now}] ${text}`;
+      }
 
-      check.onclick = async () => {
+      async function onChange() {
         try {
           const result = await runPytype(input.value);
-          pytypeOutput.innerText = `[${now()}] ${result}\n`;
+          if (result) {
+            updateOutput(`Type checking found issues:\n${result}`);
+          } else {
+            updateOutput("Type checking found no issues.");
+          }
         } catch (e) {
-          pytypeOutput.innerText = `[${now()}] ${e}\n`;
+          updateOutput(`Type checking failed: ${e.message}`);
         }
-      };
+      }
+
+      input.value = [
+        "def foo(x):", //
+        "  return x + 2",
+        "",
+        'foo("1")',
+      ].join("\n");
+      input.oninput = onChange;
+      onChange();
     </script>
   </body>
 </html>
