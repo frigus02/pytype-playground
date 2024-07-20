@@ -2,11 +2,12 @@
 <html>
   <head>
     <title>Pytype Playground</title>
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
     <style>
       textarea,
       output {
         display: block;
+        white-space: preserve;
+        font-family: monospace;
       }
       textarea {
         width: 500px;
@@ -18,50 +19,66 @@
     <h1>Pytype Playground</h1>
     <textarea id="input"></textarea>
     <button id="check">Check</button>
-    <output id="errors"></output>
+    <output id="pytypeOutput"></output>
     <script type="module">
-      async function main() {
-        input.value = ["def foo(x):", "  return x + 2", "", 'foo("1")'].join(
-          "\n"
-        );
+      const pytypeWorker = new Worker("./worker.js");
 
-        const pyodide = await loadPyodide({
-          packages: [
-            "./wheels/attrs-23.2.0-py3-none-any.whl",
-            "./wheels/immutabledict-4.2.0-py3-none-any.whl",
-            "./wheels/pycnite-2024.7.9-py3-none-any.whl",
-            "./wheels/pytype-2024.4.11-cp311-cp311-emscripten_3_1_46_wasm32.whl",
-            "./wheels/tabulate-0.9.0-py3-none-any.whl",
-            "./wheels/typing_extensions-4.12.2-py3-none-any.whl",
-            "msgspec",
-          ],
-        });
-        window.pyodide = pyodide;
-        errors.innerText += "pyodide is downloaded\n";
-
-        const runCheck = await pyodide.runPythonAsync(`
-			from pytype import analyze
-			from pytype import config
-			from pytype import load_pytd
-
-			options = config.Options.create()
-			loader = load_pytd.create_loader(options)
-			
-			def check(code):
-				res = analyze.check_types(code, options, loader)
-				return str(res.context.errorlog)
-
-			check
-		`);
-
-        errors.innerText += "pytype is initialized\n";
-
-        check.onclick = () => {
-          const result = runCheck(input.value);
-          errors.innerText = result;
-        };
+      function now() {
+        return new Date().toLocaleString();
       }
-      main();
+
+      let currentTask = undefined;
+      let queuedTask = undefined;
+      function runPytype(src) {
+        const { promise, resolve, reject } = Promise.withResolvers();
+        if (!currentTask) {
+          pytypeWorker.postMessage({ src });
+          currentTask = { resolve, reject };
+          setupFinally(promise);
+        } else {
+          queuedTask?.reject(new Error("cancelled"));
+          queuedTask = { promise, resolve, reject, src };
+        }
+        return promise;
+      }
+      function setupFinally(promise) {
+        promise.finally(() => {
+          if (queuedTask) {
+            const { promise, resolve, reject, src } = queuedTask;
+            pytypeWorker.postMessage({ src });
+            currentTask = { resolve, reject };
+            setupFinally(promise);
+            queuedTask = undefined;
+          } else {
+            currentTask = undefined;
+          }
+        });
+      }
+      pytypeWorker.onmessage = ({ data }) => {
+        if ("notify" in data) {
+          pytypeOutput.innerText = `[${now()}] ${data.notify}\n`;
+        } else if ("result" in data) {
+          currentTask?.resolve(data.result);
+        } else if ("error" in data) {
+          currentTask?.reject(data.error);
+        } else {
+          pytypeOutput.innerText = `[${now()}] Unexpected message from worker.\n`;
+          console.log(data);
+        }
+      };
+
+      input.value = ["def foo(x):", "  return x + 2", "", 'foo("1")'].join(
+        "\n"
+      );
+
+      check.onclick = async () => {
+        try {
+          const result = await runPytype(input.value);
+          pytypeOutput.innerText = `[${now()}] ${result}\n`;
+        } catch (e) {
+          pytypeOutput.innerText = `[${now()}] ${e}\n`;
+        }
+      };
     </script>
   </body>
 </html>
