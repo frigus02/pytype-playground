@@ -14,6 +14,12 @@ async function preparePytype() {
     ],
   });
   self.postMessage({ notify: "Preparing pytype..." });
+  const versions = await pyodide.runPythonAsync(`
+    import sys
+    from pytype import __version__
+    (sys.version.split(' ')[0], __version__.__version__)
+  `);
+  self.postMessage({ versions: { python: versions[0], pytype: versions[1] } });
   const pytype = await pyodide.runPythonAsync(`
     from pytype import analyze
     from pytype import config
