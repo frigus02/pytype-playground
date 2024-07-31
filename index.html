@@ -59,6 +59,40 @@
     <script type="module">
       const pytypeWorker = new Worker("./worker.js");
 
+      async function compressToUrl(src) {
+        const stream = new Blob([src])
+          .stream()
+          .pipeThrough(new CompressionStream("deflate-raw"));
+        const bytes = await new Response(stream).bytes();
+        const code = btoa(String.fromCharCode(...bytes));
+        const params = new URLSearchParams();
+        params.append("code", code);
+        location.hash = params;
+      }
+
+      async function decompressFromUrl() {
+        const params = new URLSearchParams(location.hash.substring(1));
+        const code = params.get("code");
+        if (!code) {
+          return undefined;
+        }
+
+        try {
+          const bytesStr = atob(code);
+          const bytes = new Uint8Array(bytesStr.length);
+          for (let i = 0; i < bytesStr.length; i++) {
+            bytes[i] = bytesStr.charCodeAt(i);
+          }
+
+          const stream = new Blob([bytes])
+            .stream()
+            .pipeThrough(new DecompressionStream("deflate-raw"));
+          return await new Response(stream).text();
+        } catch (e) {
+          return undefined;
+        }
+      }
+
       let currentTask = undefined;
       let queuedTask = undefined;
       function runPytype(src) {
@@ -111,7 +145,9 @@
 
       async function onChange() {
         try {
-          const result = await runPytype(input.value);
+          const src = input.value;
+          const result = await runPytype(src);
+          await compressToUrl(src);
           if (result) {
             updateOutput(`Type checking found issues:\n${result}`);
           } else {
@@ -122,12 +158,10 @@
         }
       }
 
-      input.value = [
-        "def foo(x):", //
-        "  return x + 2",
-        "",
-        'foo("1")',
-      ].join("\n");
+      const initialCode =
+        (await decompressFromUrl()) ??
+        'def foo(x):\n  return x + 2\n\nfoo("1")';
+      input.value = initialCode;
       input.oninput = onChange;
       onChange();
     </script>
