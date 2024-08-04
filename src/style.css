@@ -1,0 +1,43 @@
+html {
+  height: 100vh;
+}
+
+body {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr auto;
+  margin: 0;
+  height: 100vh;
+}
+
+.editor-container {
+  position: relative;
+}
+
+#editor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+}
+
+dl {
+  margin: 0;
+  text-align: right;
+  border-top: 1px solid #e0e0df;
+}
+
+dt,
+dd {
+  display: inline-block;
+  margin: 0;
+}
+
+dd {
+  padding: 2px 2px 2px 0;
+}
+
+dd:not(:last-child) {
+  border-right: 1px solid #e0e0df;
+}
