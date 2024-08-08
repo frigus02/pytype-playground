@@ -45,14 +45,14 @@ async function preparePytype() {
             for e in res.context.errorlog
           ]
         except Exception as e:
-          return {
+          return [{
             "severity": 2, # 2 = Error
             "line": 1,
             "col": 0,
             "endline": 1,
             "endcol": 0,
             "message": str(e)
-          }
+          }]
 
     Pytype()
   `);
