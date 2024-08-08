@@ -15,6 +15,19 @@
     <div class="editor-container">
       <div id="editor"></div>
     </div>
+    <form class="options" name="options">
+      <ul id="featureFlags"></ul>
+      <ul id="experimentalFlags"></ul>
+      <template id="optionTemplate">
+        <li>
+          <label>
+            <input type="checkbox" />
+            <span class="name"></span>
+          </label>
+          <span class="description"></span>
+        </li>
+      </template>
+    </form>
     <dl>
       <dt>Python version:</dt>
       <dd id="pythonVersion">...</dd>

@@ -19,6 +19,20 @@ async function preparePytype() {
     from pytype import __version__
     (sys.version, __version__.__version__)
   `);
+  const flags = await pyodide.runPythonAsync(`
+    from pytype import config
+    def _flag(f):
+      return {
+        "name": f.dest,
+        "flag": f.long_opt,
+        "default": f.get("default"),
+        "description": f.get("help")
+      }
+    (
+      [_flag(f) for f in config.FEATURE_FLAGS],
+      [_flag(f) for f in config.EXPERIMENTAL_FLAGS]
+    )
+  `);
   const pytype = await pyodide.runPythonAsync(`
     from pytype import analyze
     from pytype import config
@@ -28,8 +42,9 @@ async function preparePytype() {
     loader = load_pytd.create_loader(options)
 
     class Pytype:
-      def check(self, code):
+      def check(self, code, flags={}):
         try:
+          options = config.Options.create(**flags.to_py())
           res = analyze.check_types(code, options, loader)
           return [
             {
@@ -58,9 +73,22 @@ async function preparePytype() {
   `);
   return {
     pytype,
+    flags: {
+      feature: flagsToMap(flags[0]),
+      experimental: flagsToMap(flags[1]),
+    },
     pythonVersion: versions[0],
     pytypeVersion: versions[1],
   };
+}
+
+function flagsToMap(flags) {
+  return flags.map((f) => ({
+    name: f.get("name"),
+    flag: f.get("flag"),
+    default: f.get("default"),
+    description: f.get("description"),
+  }));
 }
 
 class PythonWorker {
@@ -79,12 +107,17 @@ class PythonWorker {
     return { python: pythonVersion, pytype: pytypeVersion };
   }
 
-  async getDiagnostics(fileName) {
+  async getFlags() {
+    const { flags } = await this.pytypePromise;
+    return flags;
+  }
+
+  async getDiagnostics(fileName, options) {
     const { pytype } = await this.pytypePromise;
     const model = this.getModel(fileName);
     if (!model) return [];
     const errors = await pytype
-      .check(model.getValue())
+      .check(model.getValue(), options)
       .toJs({ create_proxies: false });
     return errors.map((e) => {
       let message = e.get("message");

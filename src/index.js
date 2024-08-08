@@ -34,6 +34,45 @@ async function decompressFromUrl() {
   }
 }
 
+async function setupInfo(getWorker) {
+  const worker = await getWorker();
+  const versions = await worker.getVersions();
+  pythonVersion.innerText = versions.python;
+  pytypeVersion.innerText = versions.pytype;
+}
+
+async function setupFlags(getWorker) {
+  const worker = await getWorker();
+  const flags = await worker.getFlags();
+  for (const f of flags.feature) {
+    featureFlags.appendChild(createOption(f));
+  }
+  for (const f of flags.experimental) {
+    experimentalFlags.appendChild(createOption(f));
+  }
+
+  function createOption(f) {
+    const e = optionTemplate.content.cloneNode(true);
+    const descriptionId = `description-${f.name}`;
+    e.querySelector("input").name = f.name;
+    e.querySelector("input").checked = f.default;
+    e.querySelector("input").setAttribute("aria-describedby", descriptionId);
+    e.querySelector(".name").innerText = f.flag;
+    e.querySelector(".description").id = descriptionId;
+    e.querySelector(".description").innerText = f.description;
+    return e;
+  }
+}
+
+function options() {
+  return Object.fromEntries(
+    [...new FormData(document.forms.options).entries()].map(([name, value]) => [
+      name,
+      !!value,
+    ])
+  );
+}
+
 function setupSaveCodeToUrl() {
   const listeners = {};
 
@@ -91,7 +130,10 @@ function setupDiagnostics(getWorker) {
       return;
     }
 
-    const diagnostics = await worker.getDiagnostics(model.uri.toString());
+    const diagnostics = await worker.getDiagnostics(
+      model.uri.toString(),
+      options()
+    );
     if (!diagnostics || model.isDisposed()) {
       // model was disposed in the meantime
       return;
@@ -150,12 +192,8 @@ monaco.languages.onLanguage("python", () => {
   const getWorker = createWorkerFactory();
   setupSaveCodeToUrl();
   setupDiagnostics(getWorker);
-  getWorker()
-    .then((worker) => worker.getVersions())
-    .then((versions) => {
-      pythonVersion.innerText = versions.python;
-      pytypeVersion.innerText = versions.pytype;
-    });
+  setupInfo(getWorker);
+  setupFlags(getWorker);
 });
 
 self.MonacoEnvironment = {
