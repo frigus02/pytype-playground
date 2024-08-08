@@ -58,7 +58,7 @@ async function preparePytype() {
   `);
   return {
     pytype,
-    pythonVersion: versions[1],
+    pythonVersion: versions[0],
     pytypeVersion: versions[1],
   };
 }
