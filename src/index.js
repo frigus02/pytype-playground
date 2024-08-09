@@ -39,6 +39,8 @@ async function setupInfo(getWorker) {
   const versions = await worker.getVersions();
   pythonVersion.innerText = versions.python;
   pytypeVersion.innerText = versions.pytype;
+  loadingIndicator.remove();
+  document.querySelector(".info").classList.remove("hidden");
 }
 
 async function setupFlags(getWorker) {
@@ -207,10 +209,9 @@ self.MonacoEnvironment = {
 
 const initialCode =
   (await decompressFromUrl()) ?? 'def foo(x):\n  return x + 2\n\nfoo("1")';
-const editor = monaco.editor.create(document.getElementById("editor"), {
-  value: initialCode,
+monaco.editor.create(document.getElementById("editor"), {
+  automaticLayout: true,
+  minimap: { enabled: false },
   language: "python",
-});
-window.addEventListener("resize", () => {
-  editor.layout();
+  value: initialCode,
 });

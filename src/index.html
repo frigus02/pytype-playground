@@ -12,27 +12,44 @@
     <script type="module" src="./index.js"></script>
   </head>
   <body>
+    <header>
+      <h1>🦆✔ pytype playground</h1>
+      <nav>
+        On GitHub:
+        <a href="https://github.com/google/pytype">pytype</a>,
+        <a href="https://github.com/frigus02/pytype-playground"
+          >this playround</a
+        >
+      </nav>
+    </header>
     <div class="editor-container">
       <div id="editor"></div>
     </div>
-    <form class="options" name="options">
-      <ul id="featureFlags"></ul>
-      <ul id="experimentalFlags"></ul>
-      <template id="optionTemplate">
-        <li>
-          <label>
-            <input type="checkbox" />
-            <span class="name"></span>
-          </label>
-          <span class="description"></span>
-        </li>
-      </template>
-    </form>
-    <dl>
-      <dt>Python version:</dt>
-      <dd id="pythonVersion">...</dd>
-      <dt>Pytype version:</dt>
-      <dd id="pytypeVersion">...</dd>
-    </dl>
+    <div id="loadingIndicator">Loading pytype...</div>
+    <aside class="info hidden">
+      <h2>Options</h2>
+      <form class="options" name="options">
+        <h3>Feature flags</h3>
+        <ul id="featureFlags"></ul>
+        <h3>Experimental flags</h3>
+        <ul id="experimentalFlags"></ul>
+        <template id="optionTemplate">
+          <li>
+            <label>
+              <input type="checkbox" />
+              <span class="name"></span>
+            </label>
+            <div class="description"></div>
+          </li>
+        </template>
+      </form>
+      <h2>Versions</h2>
+      <dl class="versions">
+        <dt>Python version:</dt>
+        <dd id="pythonVersion"></dd>
+        <dt>Pytype version:</dt>
+        <dd id="pytypeVersion"></dd>
+      </dl>
+    </aside>
   </body>
 </html>

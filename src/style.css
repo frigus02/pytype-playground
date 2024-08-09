@@ -4,13 +4,31 @@ html {
 
 body {
   display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: 1fr auto;
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "header header"
+    "editor info";
   margin: 0;
   height: 100vh;
 }
 
+header {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  background: #faf9f8;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
 .editor-container {
+  grid-area: editor;
   position: relative;
 }
 
@@ -22,22 +40,53 @@ body {
   bottom: 0;
 }
 
-dl {
+#loadingIndicator {
+  grid-area: info;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.info {
+  grid-area: info;
+  position: relative;
+  overflow: auto;
+  padding: 10px;
+  border-left: 1px solid #dadada;
+}
+
+.info.hidden {
+  display: none;
+}
+
+.info h2 {
   margin: 0;
-  text-align: right;
-  border-top: 1px solid #e0e0df;
+  font-size: 1.2rem;
 }
 
-dt,
-dd {
-  display: inline-block;
-  margin: 0;
+.info h3 {
+  font-size: 1.1rem;
 }
 
-dd {
-  padding: 2px 2px 2px 0;
+.options ul {
+  list-style-type: none;
+  padding: 0;
 }
 
-dd:not(:last-child) {
-  border-right: 1px solid #e0e0df;
+.options li:not(:last-child) {
+  margin-bottom: 0.5em;
+}
+
+.options label {
+  display: block;
+}
+
+.options .description {
+  margin-left: 1.6em;
+  margin-top: 0.3em;
+  font-size: 0.9em;
+}
+
+.versions dd {
+  font-size: 0.9em;
 }
