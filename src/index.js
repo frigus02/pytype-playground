@@ -66,7 +66,7 @@ async function setupFlags(getWorker) {
   }
 }
 
-function options() {
+function getSelectedOptions() {
   return Object.fromEntries(
     [...new FormData(document.forms.options).entries()].map(([name, value]) => [
       name,
@@ -134,7 +134,7 @@ function setupDiagnostics(getWorker) {
 
     const diagnostics = await worker.getDiagnostics(
       model.uri.toString(),
-      options()
+      getSelectedOptions()
     );
     if (!diagnostics || model.isDisposed()) {
       // model was disposed in the meantime
@@ -150,14 +150,21 @@ function setupDiagnostics(getWorker) {
     }
 
     let handle;
-    const changeSubscription = model.onDidChangeContent(() => {
+    function debouncedChange() {
       clearTimeout(handle);
       handle = window.setTimeout(validate, 500, model);
+    }
+
+    const changeSubscription = model.onDidChangeContent(debouncedChange);
+    const controller = new AbortController();
+    document.forms.options.addEventListener("change", debouncedChange, {
+      signal: controller.signal,
     });
 
     listeners[model.uri.toString()] = {
       dispose() {
         changeSubscription.dispose();
+        controller.abort();
         clearTimeout(handle);
       },
     };
