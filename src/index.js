@@ -1,18 +1,22 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.main.js";
 
+function getUrlParams() {
+  return new URLSearchParams(location.hash.substring(1));
+}
+
 async function compressToUrl(src) {
   const stream = new Blob([src])
     .stream()
     .pipeThrough(new CompressionStream("deflate-raw"));
   const bytes = await new Response(stream).bytes();
   const code = btoa(String.fromCharCode(...bytes));
-  const params = new URLSearchParams();
-  params.append("code", code);
+  const params = getUrlParams();
+  params.set("code", code);
   location.hash = params;
 }
 
 async function decompressFromUrl() {
-  const params = new URLSearchParams(location.hash.substring(1));
+  const params = getUrlParams();
   const code = params.get("code");
   if (!code) {
     return undefined;
@@ -46,6 +50,7 @@ async function setupInfo(getWorker) {
 async function setupFlags(getWorker) {
   const worker = await getWorker();
   const flags = await worker.getFlags();
+  const params = getUrlParams();
   for (const f of flags.feature) {
     featureFlags.appendChild(createOption(f));
   }
@@ -55,13 +60,20 @@ async function setupFlags(getWorker) {
 
   function createOption(f) {
     const e = optionTemplate.content.cloneNode(true);
-    const descriptionId = `description-${f.name}`;
-    e.querySelector("input").name = f.name;
-    e.querySelector("input").checked = f.default;
-    e.querySelector("input").setAttribute("aria-describedby", descriptionId);
-    e.querySelector(".name").innerText = f.flag;
-    e.querySelector(".description").id = descriptionId;
-    e.querySelector(".description").innerText = f.description;
+    const descriptionId = `description_${f.name}`;
+    const input = e.querySelector("input");
+    const name = e.querySelector(".name");
+    const description = e.querySelector(".description");
+
+    input.name = f.name;
+    input.defaultChecked = f.default;
+    if (params.get(f.name)) {
+      input.checked = true;
+    }
+    input.setAttribute("aria-describedby", descriptionId);
+    name.innerText = f.flag;
+    description.id = descriptionId;
+    description.innerText = f.description;
     return e;
   }
 }
@@ -75,13 +87,28 @@ function getSelectedOptions() {
   );
 }
 
-function setupSaveCodeToUrl() {
+function setupSaveStateToUrl() {
   const listeners = {};
 
   monaco.editor.onDidCreateModel((model) => onModelAdd(model));
   monaco.editor.onWillDisposeModel(onModelRemoved);
 
   monaco.editor.getModels().forEach((model) => onModelAdd(model));
+
+  document.forms.options.addEventListener("change", saveOptionsToUrl);
+
+  function saveOptionsToUrl() {
+    const params = new URLSearchParams();
+    const currentParams = getUrlParams();
+    if (currentParams.has("code")) {
+      params.set("code", currentParams.get("code"));
+    }
+    const options = getSelectedOptions();
+    for (const [name, value] of Object.entries(options)) {
+      params.set(name, value);
+    }
+    location.hash = params;
+  }
 
   async function saveCodeToUrl() {
     const model = monaco.editor.getModels()[0];
@@ -234,10 +261,11 @@ function createWorkerFactory() {
 
 monaco.languages.onLanguage("python", () => {
   const getWorker = createWorkerFactory();
-  setupSaveCodeToUrl();
-  setupDiagnostics(getWorker);
+  setupSaveStateToUrl();
   setupInfo(getWorker);
-  setupFlags(getWorker);
+  setupFlags(getWorker).then(() => {
+    setupDiagnostics(getWorker);
+  });
 });
 
 self.MonacoEnvironment = {
