@@ -113,6 +113,21 @@ function setupSaveCodeToUrl() {
   }
 }
 
+function formatDiagnostics(diagnostics) {
+  return diagnostics
+    .map((d) => {
+      const pos = `code.py:${d.line}:${d.col + 1}`;
+      const severity = d.severity === 2 ? "error" : "warning";
+      const method = d.methodname ? ` in ${d.methodname}:` : "";
+      let res = `${pos}: ${severity}:${method} ${d.message} [${d.name}]`;
+      if (d.details) {
+        res += "\n  " + d.details.replaceAll("\n", "\n  ");
+      }
+      return res;
+    })
+    .join("\n\n");
+}
+
 function setupDiagnostics(getWorker) {
   const listeners = {};
 
@@ -141,7 +156,27 @@ function setupDiagnostics(getWorker) {
       return;
     }
 
-    monaco.editor.setModelMarkers(model, "python", diagnostics);
+    const markers = diagnostics.map((d) => {
+      let message = d.message;
+      if (d.details) {
+        message += "\n  " + d.details.replaceAll("\n", "\n  ");
+      }
+      return {
+        severity:
+          d.severity === 2
+            ? monaco.MarkerSeverity.Error
+            : monaco.MarkerSeverity.Warning,
+        startLineNumber: d.line,
+        startColumn: d.col + 1,
+        endLineNumber: d.endline,
+        endColumn: d.endcol + 1,
+        message,
+        code: d.name,
+      };
+    });
+
+    monaco.editor.setModelMarkers(model, "python", markers);
+    errors.innerText = formatDiagnostics(diagnostics);
   }
 
   function onModelAdd(model) {

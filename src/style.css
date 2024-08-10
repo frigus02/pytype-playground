@@ -68,6 +68,12 @@ header h1 {
   font-size: 1.1rem;
 }
 
+#errors {
+  font-family: monospace;
+  white-space: pre-wrap;
+  margin: 16px 0;
+}
+
 .options ul {
   list-style-type: none;
   padding: 0;

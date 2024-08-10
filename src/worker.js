@@ -55,6 +55,7 @@ async function preparePytype() {
               "endcol": e._endcol,
               "message": e._message,
               "details": e._details,
+              "methodname": e._methodname,
               "name": e._name
             }
             for e in res.context.errorlog
@@ -119,22 +120,17 @@ class PythonWorker {
     const errors = await pytype
       .check(model.getValue(), options)
       .toJs({ create_proxies: false });
-    return errors.map((e) => {
-      let message = e.get("message");
-      const details = e.get("details");
-      if (details) {
-        message += "\n  " + details.replaceAll("\n", "\n  ");
-      }
-      return {
-        severity: e.get("severity") === 2 ? 8 : 4, // 8 = Error, 4 = Warning
-        startLineNumber: e.get("line"),
-        startColumn: e.get("col") + 1,
-        endLineNumber: e.get("endline"),
-        endColumn: e.get("endcol") + 1,
-        message,
-        code: e.get("name"),
-      };
-    });
+    return errors.map((e) => ({
+      severity: e.get("severity"),
+      line: e.get("line"),
+      col: e.get("col"),
+      endline: e.get("endline"),
+      endcol: e.get("endcol"),
+      message: e.get("message"),
+      details: e.get("details"),
+      methodname: e.get("methodname"),
+      name: e.get("name"),
+    }));
   }
 }
 
