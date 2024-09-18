@@ -19,7 +19,7 @@ popd
 
 git clone https://github.com/google/pytype.git
 pushd pytype
-git checkout 092cda50b7d9ed45f501f44089cef464d36fa6d3
+git checkout 2024.09.13
 git submodule update --init
 pyodide build
 popd
