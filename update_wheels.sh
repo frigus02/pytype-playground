@@ -1,10 +1,12 @@
 #!/bin/bash
 set -xeuo pipefail
 
+
 TMP="$(mktemp -d)"
 pushd "${TMP}"
 
-python3.11 -m venv venv
+pyenv local 3.12
+pyenv exec python -m venv venv
 source venv/bin/activate
 pip install pyodide-build
 
@@ -24,14 +26,16 @@ git submodule update --init
 pyodide build
 popd
 
+deactivate
 popd
 
 rm wheels/*
 
 cp "${TMP}/pytype/dist/pytype-"* ./wheels/
-rm -r "${TMP}"
+rm -rf "${TMP}"
 
-# Based on https://github.com/google/pytype/blob/092cda50b7d9ed45f501f44089cef464d36fa6d3/requirements.txt
+# Based on https://github.com/google/pytype/blob/2024.09.13/requirements.txt
 # - msgpack has native code but it luckily builtin to Pyodide
 # - the remaining deps don't necessary for pytype itself
-pip download -d  wheels/ attrs immutabledict pycnite tabulate typing-extensions
+pyenv local 3.12
+pyenv exec pip download -d wheels/ attrs immutabledict pycnite tabulate typing-extensions

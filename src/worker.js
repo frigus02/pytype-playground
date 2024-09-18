@@ -5,10 +5,10 @@ importScripts("https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js");
 async function preparePytype() {
   const pyodide = await loadPyodide({
     packages: [
-      "./wheels/attrs-24.1.0-py3-none-any.whl",
+      "./wheels/attrs-24.2.0-py3-none-any.whl",
       "./wheels/immutabledict-4.2.0-py3-none-any.whl",
       "./wheels/pycnite-2024.7.31-py3-none-any.whl",
-      "./wheels/pytype-2024.4.11-cp311-cp311-emscripten_3_1_46_wasm32.whl",
+      "./wheels/pytype-2024.9.13-cp312-cp312-pyodide_2024_0_wasm32.whl",
       "./wheels/tabulate-0.9.0-py3-none-any.whl",
       "./wheels/typing_extensions-4.12.2-py3-none-any.whl",
       "msgspec",
