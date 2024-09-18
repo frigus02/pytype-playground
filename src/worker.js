@@ -1,6 +1,6 @@
 import * as worker from "monaco-editor/esm/vs/editor/editor.worker.js";
 
-importScripts("https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js");
+importScripts("https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js");
 
 async function preparePytype() {
   const pyodide = await loadPyodide({
