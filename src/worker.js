@@ -8,7 +8,7 @@ async function preparePytype() {
       "./wheels/attrs-24.2.0-py3-none-any.whl",
       "./wheels/immutabledict-4.2.0-py3-none-any.whl",
       "./wheels/pycnite-2024.7.31-py3-none-any.whl",
-      "./wheels/pytype-2024.9.13-cp312-cp312-pyodide_2024_0_wasm32.whl",
+      "./wheels/pytype-2024.10.11-cp312-cp312-pyodide_2024_0_wasm32.whl",
       "./wheels/tabulate-0.9.0-py3-none-any.whl",
       "./wheels/typing_extensions-4.12.2-py3-none-any.whl",
       "msgspec",
